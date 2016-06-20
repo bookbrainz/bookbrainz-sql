@@ -10,4 +10,10 @@ INSERT INTO bookbrainz.achievement_type ("name", "description", "badge_url") VAL
 	('Publisher I', 'Create one publication', 'images/publisherI.svg'),
 	('Publisher II', 'Create 10 publications', 'images/publisherII.svg'),
 	('Publisher III', 'Create 100 publications', 'images/publisherIII.svg');
+
+INSERT INTO bookbrainz.title_type ("title", "description") VALUES
+	('Revisionist', 'Complete the Revisionist series of badges'),
+	('Creator Creator', 'Complete the Creator Creator series of badges'),
+	('Publisher', 'Complete the Publisher series of badges');
+
 COMMIT;
