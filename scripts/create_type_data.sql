@@ -7,6 +7,9 @@ INSERT INTO bookbrainz.achievement_type ("name", "description", "badge_url") VAL
 	('Creator Creator I', 'Create one creator', '/images/creatorcreatorI.svg'),
 	('Creator Creator II', 'Create 10 creators', '/images/creatorcreatorII.svg'),
 	('Creator Creator III', 'Create 100 creators', '/images/creatorcreatorIII.svg'),
+	('Explorer I', 'View 10 entities', '/images/explorerI.svg'),
+	('Explorer II', 'View 100 entities', '/images/explorerII.svg'),
+	('Explorer III', 'View 1000 entities', '/images/explorerIII.svg');
 	('Publisher I', 'Create one publication', '/images/publisherI.svg'),
 	('Publisher II', 'Create 10 publications', '/images/publisherII.svg'),
 	('Publisher III', 'Create 100 publications', '/images/publisherIII.svg'),
@@ -15,15 +18,15 @@ INSERT INTO bookbrainz.achievement_type ("name", "description", "badge_url") VAL
 	('Marathoner', 'Create a revision a day for 30 days', '/images/marathoner.svg'),
 	('Time Traveller', 'Create an edition before it is released', '/images/timetraveller.svg'),
 	('Hot Off the Press', 'Create an edition within a week of its release', '/images/hotoffthepress.svg'),
-	('Publisher Creator I', 'Create one publisher', '/images/revisionistI.svg'),
-	('Publisher Creator II', 'Create 10 publishers', '/images/revisionistI.svg'),
-	('Publisher Creator III', 'Create 100 publishers', '/images/revisionistI.svg'),
-	('Limited Edition I', 'Create one edition', '/images/revisionistI.svg'),
-	('Limited Edition II', 'Create 10 editions', '/images/revisionistI.svg'),
-	('Limited Edition III', 'Create 100 editions', '/images/revisionistI.svg'),
-	('Worker Bee I', 'Create one work', '/images/revisionistI.svg'),
-	('Worker Bee II', 'Create 10 works', '/images/revisionistI.svg'),
-	('Worker Bee III', 'Create 100 editions', '/images/revisionistI.svg');
+	('Publisher Creator I', 'Create one publisher', '/images/publishercreatorI.svg'),
+	('Publisher Creator II', 'Create 10 publishers', '/images/publishercreatorII.svg'),
+	('Publisher Creator III', 'Create 100 publishers', '/images/publishercreatorIII.svg'),
+	('Limited Edition I', 'Create one edition', '/images/limitededitionI.svg'),
+	('Limited Edition II', 'Create 10 editions', '/images/limitededitionII.svg'),
+	('Limited Edition III', 'Create 100 editions', '/images/limitededitionIII.svg'),
+	('Worker Bee I', 'Create one work', '/images/workerbeeI.svg'),
+	('Worker Bee II', 'Create 10 works', '/images/workerbeeII.svg'),
+	('Worker Bee III', 'Create 100 works', '/images/workerbeeIII.svg');
 
 INSERT INTO bookbrainz.title_type ("title", "description") VALUES
 	('Revisionist', 'Complete the Revisionist series of badges'),
