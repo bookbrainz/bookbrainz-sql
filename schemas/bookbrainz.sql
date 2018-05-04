@@ -1,5 +1,9 @@
 BEGIN;
 
+CREATE EXTENSION pg_trgm;
+CREATE EXTENSION unaccent;
+CREATE EXTENSION btree_gin;
+
 CREATE TYPE bookbrainz.lang_proficiency AS ENUM (
 	'BASIC',
 	'INTERMEDIATE',
@@ -439,6 +443,7 @@ CREATE TABLE bookbrainz.alias (
 	name TEXT NOT NULL CHECK (name <> ''),
 	sort_name TEXT NOT NULL CHECK (sort_name <> ''),
 	language_id INT,
+	tokens TSVECTOR,
 	"primary" BOOLEAN NOT NULL DEFAULT FALSE
 );
 ALTER TABLE bookbrainz.alias ADD FOREIGN KEY (language_id) REFERENCES musicbrainz.language (id) DEFERRABLE;
@@ -675,5 +680,68 @@ CREATE VIEW bookbrainz.publication AS
 	LEFT JOIN bookbrainz.publication_data pcd ON pcr.data_id = pcd.id
 	LEFT JOIN bookbrainz.alias_set als ON pcd.alias_set_id = als.id
 	WHERE e.type = 'Publication';
+
+-- View to extract all the master entities
+CREATE VIEW bookbrainz.master_entities AS
+	SELECT bbid as entity_id, default_alias_id as alias_id, 'creator' AS entity_type
+		FROM bookbrainz.creator
+		WHERE master=true
+	UNION
+	SELECT bbid as entity_id, default_alias_id as alias_id, 'edition' AS entity_type
+		FROM bookbrainz.edition
+		WHERE master=true
+	UNION
+	SELECT bbid as entity_id, default_alias_id as alias_id, 'publication' AS entity_type
+		FROM bookbrainz.publication
+		WHERE master=true
+	UNION
+	SELECT bbid as entity_id, default_alias_id as alias_id, 'publisher' AS entity_type
+		FROM bookbrainz.publisher
+		WHERE master=true
+	UNION
+	SELECT bbid as entity_id, default_alias_id as alias_id, 'work' AS entity_type
+		FROM bookbrainz.work
+		WHERE master=true;
+
+-- Materialized view holding all the search relevant information about master entities
+CREATE MATERIALIZED VIEW bookbrainz.search_mv AS
+	SELECT items.entity_id, alias.name, alias.tokens, items.entity_type
+	FROM bookbrainz.alias AS alias
+	JOIN (
+		SELECT *
+		FROM bookbrainz.master_entities
+	) AS items
+	ON alias.id = items.alias_id;
+
+-- Index on token field of materialized view search_mv for quick FTS
+CREATE INDEX fts_search_idx ON bookbrainz.search_mv USING gin(tokens);
+
+-- Unique index on materialized view search_mv created to help execute REFRESH CONCURRENTLY command
+CREATE UNIQUE INDEX unique_search_idx ON bookbrainz.search_mv (entity_id);
+
+-- Index on name field of materialized view search_mv to facilitate quick matching operations
+CREATE INDEX untokenized_names_idx ON bookbrainz.search_mv USING gin(name);
+
+-- View holding all master entities with empty tokens, signifying unsupported names by to_tsvector
+CREATE VIEW bookbrainz.untokenized_names AS
+	SELECT * FROM bookbrainz.search_mv WHERE tokens = '';
+
+-- Materialized view for all unique tokens (used to suggest the next best query)
+CREATE MATERIALIZED VIEW bookbrainz.search_words_mv AS
+	SELECT word FROM ts_stat($$
+		SELECT alias.tokens
+		FROM bookbrainz.alias AS alias
+		JOIN (
+			SELECT alias_id
+			FROM bookbrainz.master_entities
+		) AS items
+		ON alias.id = items.alias_id;
+	$$);
+
+-- Trigram index on materialized view search_words_mv for quick fuzzy search.
+CREATE INDEX search_words_mv_idx ON search_words_mv USING gin(word gin_trgm_ops);
+
+-- Unique index on materialized view search_words_mv to help execute REFRESH CONCURRENTLY command
+CREATE UNIQUE INDEX unique_word_idx ON bookbrainz.search_words_mv (word);
 
 COMMIT;
