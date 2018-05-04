@@ -229,6 +229,26 @@ CREATE OR REPLACE FUNCTION bookbrainz.process_publication() RETURNS TRIGGER
 	END;
 $process_publication$ LANGUAGE plpgsql;
 
+CREATE FUNCTION bookbrainz.token_creator() RETURNS trigger
+	AS $token_creator$
+	BEGIN
+		new.tokens := to_tsvector('pg_catalog.simple', unaccent(new.name));
+		RETURN new;
+	END
+$token_creator$ LANGUAGE plpgsql;
+
+-- Function refreshes search_mv and search_words_mv materialized views
+CREATE FUNCTION bookbrainz.refresh_mv() RETURNS TRIGGER
+	AS $refresh_mv$
+	BEGIN
+		RAISE NOTICE 'Refresh Fires!';
+		REFRESH MATERIALIZED VIEW CONCURRENTLY bookbrainz.search_mv;
+		REFRESH MATERIALIZED VIEW CONCURRENTLY bookbrainz.search_words_mv;
+		RAISE NOTICE 'Refreshing ...';
+		RETURN NULL;
+	END
+$refresh_mv$ LANGUAGE plpgsql;
+
 
 BEGIN;
 
@@ -267,5 +287,57 @@ BEGIN;
 CREATE TRIGGER process_publication
 	INSTEAD OF INSERT OR UPDATE OR DELETE ON bookbrainz.publication
 	FOR EACH ROW EXECUTE PROCEDURE bookbrainz.process_publication();
+
+COMMIT;
+
+-- Trigger to unaccent and create tokens of alias name
+CREATE TRIGGER alias_token_update BEFORE INSERT OR UPDATE
+	ON bookbrainz.alias FOR EACH ROW EXECUTE PROCEDURE
+	bookbrainz.token_creator();
+
+COMMIT;
+
+BEGIN;
+
+-- Trigger to refresh views upon addition/update of creator
+CREATE TRIGGER mv_creator_update AFTER INSERT OR UPDATE
+	ON bookbrainz.creator_header FOR EACH ROW EXECUTE PROCEDURE
+	bookbrainz.refresh_mv();
+
+COMMIT;
+
+BEGIN;
+
+-- Trigger to refresh views upon addition/update of edition
+CREATE TRIGGER mv_edition_update AFTER INSERT OR UPDATE
+	ON bookbrainz.edition_header FOR EACH ROW EXECUTE PROCEDURE
+	bookbrainz.refresh_mv();
+
+COMMIT;
+
+BEGIN;
+
+-- Trigger to refresh views upon addition/update of publication
+CREATE TRIGGER mv_publication_update AFTER INSERT OR UPDATE
+	ON bookbrainz.publication_header FOR EACH ROW EXECUTE PROCEDURE
+	bookbrainz.refresh_mv();
+
+COMMIT;
+
+BEGIN;
+
+-- Trigger to refresh views upon addition/update of publisher
+CREATE TRIGGER mv_publisher_update AFTER INSERT OR UPDATE
+	ON bookbrainz.publisher_header FOR EACH ROW EXECUTE PROCEDURE
+	bookbrainz.refresh_mv();
+
+COMMIT;
+
+BEGIN;
+
+-- Trigger to refresh views upon addition/update of work
+CREATE TRIGGER mv_work_update AFTER INSERT OR UPDATE
+	ON bookbrainz.work_header FOR EACH ROW EXECUTE PROCEDURE
+	bookbrainz.refresh_mv();
 
 COMMIT;
